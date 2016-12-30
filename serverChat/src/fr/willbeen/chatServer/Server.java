@@ -6,24 +6,29 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Hashtable;
 
-import fr.willbeen.chatUtils.Log;
+import fr.willbeen.chatUtils.Logger;
+import fr.willbeen.graphic.ServerWindow;
 
 public class Server implements Runnable {
-	private ServerSocket ss;
 	private int port;
+	private OutputListener outputListener = null;
+	private ServerSocket ss = null;
+	private Logger logger = null;
 	
 	private Hashtable<String, Connection> connectedUsers = new Hashtable<String, Connection>();
 	
-	public Server(int port) {
+	public Server(int port, OutputListener ol) {
 		this.port = port;
+		outputListener = ol;
+		logger = new Logger(ol);
 	}
 	
 	@Override
 	public void run() {
 		try {
 			ss = new ServerSocket(port);
-			Log.log("Starting server");
-			Log.log(connectedUsers.size() + " client(s) are connected or trying to");
+			logger.log("Starting server");
+			logger.log(connectedUsers.size() + " client(s) are connected or trying to");
 			Thread t;
 			Connection c;
 			while (true) {
@@ -46,11 +51,15 @@ public class Server implements Runnable {
 	
 	public void addConnection(String login, Connection c) {
 		connectedUsers.put(login, c);
-		Log.log(connectedUsers.size() + " client(s) are connected or trying to");
+		logger.log(connectedUsers.size() + " client(s) are connected or trying to");
 	}
 	
 	public void removeConnection(String login) {
 		connectedUsers.remove(login);
-		Log.log(connectedUsers.size() + " client(s) are connected or trying to");
+		logger.log(connectedUsers.size() + " client(s) are connected or trying to");
+	}
+	
+	public Logger getLogger() {
+		return logger;
 	}
 }

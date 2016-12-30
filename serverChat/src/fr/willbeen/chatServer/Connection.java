@@ -12,12 +12,13 @@ import java.util.Scanner;
 import fr.willbeen.chatProtocol.DataObserver;
 import fr.willbeen.chatProtocol.DataStreamListener;
 import fr.willbeen.chatProtocol.Packet;
-import fr.willbeen.chatUtils.Log;
+import fr.willbeen.chatUtils.Logger;
 
 public class Connection implements Runnable, DataObserver {
 	public static final String newLine = System.getProperty("line.separator");
 	public static final String usersFilePath = "users.txt";
 	
+	private Logger logger = null;
 	private Server server = null;
 	private Socket socket = null;
 	private ObjectOutputStream oos = null;
@@ -29,6 +30,7 @@ public class Connection implements Runnable, DataObserver {
 
 	public Connection(Server srv, Socket s) {
 		server = srv;
+		logger = server.getLogger();
 		socket = s;
 		try {
 			oos = new ObjectOutputStream(socket.getOutputStream());
@@ -43,7 +45,7 @@ public class Connection implements Runnable, DataObserver {
 	
 	@Override
 	public void run() {		
-			Log.log("New connection incoming ...");
+			logger.log("New connection incoming ...");
 			sendMessageToClient("Bienvenue");
 			String password = "";
 			Packet packet;
@@ -62,7 +64,7 @@ public class Connection implements Runnable, DataObserver {
 				e.printStackTrace();
 			}
 			if (isValidPassword(password)) {
-				Log.log("Connexion accepted for user : " + login);
+				logger.log("Connexion accepted for user : " + login);
 				sendMessageToClient("Connexion acceptee");
 				server.addConnection(login, this);
 				dataStreamListener = new DataStreamListener(socket, this);
@@ -72,7 +74,7 @@ public class Connection implements Runnable, DataObserver {
 					processServerUserInput(sc.nextLine());
 				}
 			} else {
-				Log.log("Wrong password for user : " + login);
+				logger.log("Wrong password for user : " + login);
 				sendMessageToClient("Login / password incorrect");
 				stop();
 			}
@@ -89,7 +91,7 @@ public class Connection implements Runnable, DataObserver {
 	}
 	
 	private void processServerUserInput(String input) {
-		Log.log("Server user has typed something : " + input);
+		logger.log("Server user has typed something : " + input);
 	}
 	
 	public boolean isValidPassword(String password) {
@@ -144,5 +146,10 @@ public class Connection implements Runnable, DataObserver {
 	public void processData(Packet td) {
 		// TODO Auto-generated method stub
 		
+	}
+
+	@Override
+	public OutputListener getOutputListener() {
+		return server.getLogger().getOutputListener();
 	}
 }

@@ -13,12 +13,14 @@ import java.util.Scanner;
 import fr.willbeen.chatProtocol.DataStreamListener;
 import fr.willbeen.chatProtocol.DataObserver;
 import fr.willbeen.chatProtocol.Packet;
-import fr.willbeen.chatUtils.Log;
+import fr.willbeen.chatServer.OutputListener;
+import fr.willbeen.chatUtils.Logger;
 
-public class Client implements DataObserver, Runnable {
+public class Client implements DataObserver, Runnable, OutputListener {
 	private String host;
 	private int port;
 	
+	private Logger logger = null;
 	private Socket socket = null;
 	private ObjectOutputStream oos;
 	Scanner sc;
@@ -28,12 +30,13 @@ public class Client implements DataObserver, Runnable {
 	public Client(String host, int port) {
 		this.host = host;
 		this.port = port;
+		logger = new Logger(this);
 	}
 	
 	@Override
 	public void run() {
 		try {
-			Log.log("Starting the client");
+			logger.log("Starting the client");
 			socket = new Socket(InetAddress.getByName(host), port);
 			oos = new ObjectOutputStream(socket.getOutputStream());
 			oos.flush();			
@@ -42,7 +45,7 @@ public class Client implements DataObserver, Runnable {
 			dataStreamListenerThread.start();
 			sc = new Scanner(System.in);
 		} catch (IOException e) {
-			Log.log(Log.typeError, this.getClass().toString(), "start()", "Unable to connect on " + host + ":" + port);
+			logger.log(Logger.typeError, this.getClass().toString(), "start()", "Unable to connect on " + host + ":" + port);
 		}
 	}
 
@@ -86,5 +89,13 @@ public class Client implements DataObserver, Runnable {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+
+	@Override
+	public void consoleOutput(String output) {
+		System.out.println(output);
+	}
+	public OutputListener getOutputListener() {
+		return this;
 	}
 }

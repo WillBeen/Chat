@@ -3,7 +3,7 @@ package fr.willbeen.chatProtocol;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-import fr.willbeen.chatUtils.Log;
+import fr.willbeen.chatUtils.Logger;
 
 public abstract class DataObservable {
 	public ArrayList<DataObserver> observers = new ArrayList<DataObserver>();
