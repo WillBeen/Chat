@@ -5,74 +5,91 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.Scanner;
 
+import fr.willbeen.chatProtocol.DataObserver;
+import fr.willbeen.chatProtocol.DataStreamListener;
 import fr.willbeen.chatProtocol.Packet;
 import fr.willbeen.chatUtils.Log;
 
-public class Connection implements Runnable {
+public class Connection implements Runnable, DataObserver {
 	public static final String newLine = System.getProperty("line.separator");
-	public static final String usersFilePath = "D:\\Utilisateurs\\P093770\\workspace\\serverChat\\users.txt";
+	public static final String usersFilePath = "users.txt";
 	
-	private Socket socket;
+	private Server server = null;
+	private Socket socket = null;
+	private ObjectOutputStream oos = null;
 	private ObjectInputStream ois = null;
+	private DataStreamListener dataStreamListener = null;
+	private Scanner sc = null;
 	
 	private String login;
 
-	public Connection(Socket s) {
+	public Connection(Server srv, Socket s) {
+		server = srv;
 		socket = s;
+		try {
+			oos = new ObjectOutputStream(socket.getOutputStream());
+			oos.flush();
+			ois = new ObjectInputStream(socket.getInputStream());
+			sc = new Scanner(System.in);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	@Override
 	public void run() {		
 			Log.log("New connection incoming ...");
-
-			Log.log("Sending welcome message");
-			sendToClient("Bienvenue");
-			
-			askClientUserInput("Entrer le login : ");
+			sendMessageToClient("Bienvenue");
+			String password = "";
 			Packet packet;
 			try {
-				InputStream is = socket.getInputStream();
-				ois = new ObjectInputStream(is);
+				askClientUserInput("Entrer le login : ");
 				packet = (Packet)ois.readObject();
-				while (packet.getCommand() != Packet.cmdPushUserInput) {
-					login = packet.getArgs()[0];
-				}
-				ois.close();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				login = packet.getArgs()[0];
+				askClientUserInput("Entrer le password : ");
+				packet = (Packet)ois.readObject();
+				password = packet.getArgs()[0];
 			} catch (ClassNotFoundException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
-			Log.log("Login = " + login);
-
-//			askClientUserInput("Entrer le password : ");
-//			String password = in.readLine();
-//			Log.log("Password = " + password);
-//			
-//			in.close();
-			
-//			sendToClient();
-////			if (isValidPassword(password)) {
-////				sendToClient("Connexion acceptee");
-////				cnxListenChan = new ConnectionListenChannel(this);
-////				Thread t = new Thread(cnxListenChan);
-////				t.start();
-////			} else {
-////				sendToClient("Login / password incorrect");
-////				stop();
-////			}
-//			
-			Scanner sc = new Scanner(System.in);
-			sc.next();
+			if (isValidPassword(password)) {
+				Log.log("Connexion accepted for user : " + login);
+				sendMessageToClient("Connexion acceptee");
+				server.addConnection(login, this);
+				dataStreamListener = new DataStreamListener(socket, this);
+				Thread t = new Thread(dataStreamListener);
+				t.start();
+				while (true) {
+					processServerUserInput(sc.nextLine());
+				}
+			} else {
+				Log.log("Wrong password for user : " + login);
+				sendMessageToClient("Login / password incorrect");
+				stop();
+			}
 	}
 	
 	private void stop() {
-		sendToClient("Deconnexion du serveur");
+		sendMessageToClient("Deconnexion du serveur");
+//		server.removeConnection(this);
+		Packet packet = new Packet(Packet.cmdStopConnection, new String[]{""});
+		send(packet);
+		try {
+			socket.close();
+		} catch (IOException e) {}
+	}
+	
+	private void processServerUserInput(String input) {
+		Log.log("Server user has typed something : " + input);
 	}
 	
 	public boolean isValidPassword(String password) {
@@ -89,17 +106,17 @@ public class Connection implements Runnable {
 		return valid;
 	}
 	
-	public void sendToClient() {
-		sendToClient("");
+	public void sendMessageToClient() {
+		sendMessageToClient("");
 	}
-	public void sendToClient(String message) {
+	public void sendMessageToClient(String message) {
 		Packet packet = new Packet(message);
-		packet.send(socket);
+		send(packet);
 	}
 	
 	public void askClientUserInput(String message) {
 		Packet packet = new Packet(Packet.cmdGetUserInput, new String[]{message});
-		packet.send(socket);
+		send(packet);
 	}
 	
 	public String getLogin() {
@@ -111,5 +128,21 @@ public class Connection implements Runnable {
 		case "exit" : stop();
 		break;
 		}
+	}
+	
+	private void send(Packet packet) {
+		try {
+			oos.writeObject(packet);
+			oos.flush();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	@Override
+	public void processData(Packet td) {
+		// TODO Auto-generated method stub
+		
 	}
 }

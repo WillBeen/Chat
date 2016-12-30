@@ -1,20 +1,17 @@
-package fr.willbeen.chatClient;
+package fr.willbeen.chatProtocol;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.Socket;
 
-import fr.willbeen.chatProtocol.DataObservable;
-import fr.willbeen.chatProtocol.DataObserver;
-import fr.willbeen.chatProtocol.Packet;
 import fr.willbeen.chatUtils.Log;
 
-public class DataFromServerListener extends DataObservable implements Runnable {
+public class DataStreamListener extends DataObservable implements Runnable {
 
 	private Socket socket = null;
 	private ObjectInputStream ois = null;
 	
-	public DataFromServerListener(Socket s, DataObserver dataObserver) {
+	public DataStreamListener(Socket s, DataObserver dataObserver) {
 		super(dataObserver);
 		socket = s;
 	}
@@ -34,5 +31,12 @@ public class DataFromServerListener extends DataObservable implements Runnable {
 			Log.log(Log.typeError, getClass().toString(), "run()", "The object received isnt from the expected class");
 		}
 	}
+
+    
+    public void stop() {
+        try {
+            ois.close();
+        } catch (IOException e) {}
+    }
 
 }
