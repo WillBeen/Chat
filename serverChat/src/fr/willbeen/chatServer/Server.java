@@ -17,7 +17,7 @@ public class Server implements Runnable {
 	public void run() {
 		try {
 			ss = new ServerSocket(port);
-			Log.log(Log.typeInfo, getClass().toString(), "run()", "Lancement du serveur");
+			Log.log("Starting server");
 			Thread t;
 			while (true) {
 				t = new Thread(new Connection(ss.accept()));

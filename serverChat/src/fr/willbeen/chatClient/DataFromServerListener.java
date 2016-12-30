@@ -5,6 +5,7 @@ import java.io.ObjectInputStream;
 import java.net.Socket;
 
 import fr.willbeen.chatProtocol.DataObservable;
+import fr.willbeen.chatProtocol.DataObserver;
 import fr.willbeen.chatProtocol.Packet;
 import fr.willbeen.chatUtils.Log;
 
@@ -13,7 +14,8 @@ public class DataFromServerListener extends DataObservable implements Runnable {
 	private Socket socket = null;
 	private ObjectInputStream ois = null;
 	
-	public DataFromServerListener(Socket s) {
+	public DataFromServerListener(Socket s, DataObserver dataObserver) {
+		super(dataObserver);
 		socket = s;
 	}
 	
@@ -21,10 +23,10 @@ public class DataFromServerListener extends DataObservable implements Runnable {
 	public void run() {
 		try {
 			ois = new ObjectInputStream(socket.getInputStream());
-			Packet td;
+			Packet packet;
 			while (true) {
-				td = (Packet)ois.readObject();
-				notifyObervers(td);
+				packet = (Packet)ois.readObject();
+				notifyObervers(packet);
 			}
 		} catch (IOException e) {
 			Log.log(Log.typeError, getClass().toString(), "run()", "Unable to initialize the ObjectInputStream");
