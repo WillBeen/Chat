@@ -46,16 +46,16 @@ public class Connection implements Runnable, DataObserver {
 	@Override
 	public void run() {		
 			logger.log("New connection incoming ...");
-			sendMessageToClient("Bienvenue");
 			String password = "";
 			Packet packet;
 			try {
-				askClientUserInput("Entrer le login : ");
+				// when socket connection established, the client sends the login
 				packet = (Packet)ois.readObject();
-				login = packet.getArgs()[0];
+				login = extractUserInput(packet);
+				sendMessageToClient("Bienvenue " + login);
 				askClientUserInput("Entrer le password : ");
 				packet = (Packet)ois.readObject();
-				password = packet.getArgs()[0];
+				password = extractUserInput(packet);
 			} catch (ClassNotFoundException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -82,8 +82,7 @@ public class Connection implements Runnable, DataObserver {
 	
 	private void stop() {
 		sendMessageToClient("Deconnexion du serveur");
-//		server.removeConnection(this);
-		Packet packet = new Packet(Packet.cmdStopConnection, new String[]{""});
+		Packet packet = new Packet.Builder().command(Packet.cmdEndConnection).build();
 		send(packet);
 		try {
 			socket.close();
@@ -112,12 +111,12 @@ public class Connection implements Runnable, DataObserver {
 		sendMessageToClient("");
 	}
 	public void sendMessageToClient(String message) {
-		Packet packet = new Packet(message);
+		Packet packet = new Packet.Builder().command(Packet.cmdMessage).from("server").to(login).arguments(message).build();
 		send(packet);
 	}
 	
 	public void askClientUserInput(String message) {
-		Packet packet = new Packet(Packet.cmdGetUserInput, new String[]{message});
+		Packet packet = new Packet.Builder().command(Packet.cmdGetUserInput).arguments(message).build();
 		send(packet);
 	}
 	
@@ -151,5 +150,13 @@ public class Connection implements Runnable, DataObserver {
 	@Override
 	public OutputListener getOutputListener() {
 		return server.getLogger().getOutputListener();
+	}
+	
+	private String extractUserInput(Packet packet) {
+		String userInput = null;
+		if (packet.getCommand() == Packet.cmdPushInformation) {
+			userInput = (String)packet.getArguments();
+		}
+		return userInput;
 	}
 }

@@ -27,6 +27,10 @@ public class Client implements DataObserver, Runnable, OutputListener {
 	private DataStreamListener dataStreamListener = null;
 	Thread dataStreamListenerThread = null;
 	
+	private String login = null;
+	
+	private Packet packet = null;
+	
 	public Client(String host, int port) {
 		this.host = host;
 		this.port = port;
@@ -37,13 +41,21 @@ public class Client implements DataObserver, Runnable, OutputListener {
 	public void run() {
 		try {
 			logger.log("Starting the client");
+			sc = new Scanner(System.in);
+			// before everything, get the userlogin
+			displayMessage("Enter your login : ");
+			login = sc.nextLine();
+			// establishing socket connection with the server
+			displayMessage("Connection to the server ...");
 			socket = new Socket(InetAddress.getByName(host), port);
 			oos = new ObjectOutputStream(socket.getOutputStream());
 			oos.flush();			
 			dataStreamListener = new DataStreamListener(socket, this);
 			dataStreamListenerThread = new Thread(dataStreamListener);
 			dataStreamListenerThread.start();
-			sc = new Scanner(System.in);
+			// Sending the user login for this client
+			packet = new Packet.Builder().command(Packet.cmdPushInformation).arguments(login).build();
+			send(packet);
 		} catch (IOException e) {
 			logger.log(Logger.typeError, this.getClass().toString(), "start()", "Unable to connect on " + host + ":" + port);
 		}
@@ -58,13 +70,12 @@ public class Client implements DataObserver, Runnable, OutputListener {
 	@Override
 	public void processData(Packet packet) {
 		switch(packet.getCommand()) {
-		case Packet.cmdDisplayMessage :
-			displayMessage(packet.getArgs()[0]);
+		case Packet.cmdMessage :
 			break;
 		case Packet.cmdGetUserInput :
-			pushUserInput(packet.getArgs()[0]);
+			pushUserInput((String)packet.getArguments());
 			break;
-		case Packet.cmdStopConnection :
+		case Packet.cmdEndConnection :
 			stop();
 			break;
 		}
@@ -74,10 +85,10 @@ public class Client implements DataObserver, Runnable, OutputListener {
 		System.out.println(msg);
 	}
 
-	public void pushUserInput(String msg) {
-		displayMessage(msg);
+	public void pushUserInput(String messageToUser) {
+		displayMessage(messageToUser);
 		String userInput = sc.nextLine();
-		Packet packet = new Packet(Packet.cmdPushUserInput, new String[] {userInput});
+		Packet packet = new Packet.Builder().command(Packet.cmdPushInformation).arguments(userInput).build();
 		send(packet);
 	}
 	
