@@ -4,8 +4,6 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import fr.willbeen.chatServer.OutputListener;
-
 public class Logger {
 	public static final int typeError = 0;
 	public static final int typeWarning = 1;

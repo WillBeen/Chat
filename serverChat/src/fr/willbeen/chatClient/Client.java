@@ -1,11 +1,7 @@
 package fr.willbeen.chatClient;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.Scanner;
@@ -13,17 +9,17 @@ import java.util.Scanner;
 import fr.willbeen.chatProtocol.DataStreamListener;
 import fr.willbeen.chatProtocol.DataObserver;
 import fr.willbeen.chatProtocol.Packet;
-import fr.willbeen.chatServer.OutputListener;
+import fr.willbeen.chatUtils.InputInterface;
 import fr.willbeen.chatUtils.Logger;
+import fr.willbeen.chatUtils.OutputListener;
 
-public class Client implements DataObserver, Runnable, OutputListener {
+public class Client implements DataObserver, OutputListener {
 	private String host;
 	private int port;
 	
 	private Logger logger = null;
 	private Socket socket = null;
 	private ObjectOutputStream oos;
-	Scanner sc;
 	private DataStreamListener dataStreamListener = null;
 	Thread dataStreamListenerThread = null;
 	
@@ -31,20 +27,21 @@ public class Client implements DataObserver, Runnable, OutputListener {
 	
 	private Packet packet = null;
 	
-	public Client(String host, int port) {
+	OutputListener outputListener = null;
+	InputInterface inputInterface = null;
+	
+	public Client(String host, int port, OutputListener ol, InputInterface ii) {
 		this.host = host;
 		this.port = port;
-		logger = new Logger(this);
+		logger = new Logger(ol);
+		logger.log("Starting the client");
+		outputListener = ol;
+		inputInterface = ii;
 	}
-	
-	@Override
-	public void run() {
+
+	public void connectToServer(String login) {
 		try {
-			logger.log("Starting the client");
-			sc = new Scanner(System.in);
-			// before everything, get the userlogin
-			displayMessage("Enter your login : ");
-			login = sc.nextLine();
+			this.login = login;
 			// establishing socket connection with the server
 			displayMessage("Connection to the server ...");
 			socket = new Socket(InetAddress.getByName(host), port);
@@ -60,7 +57,6 @@ public class Client implements DataObserver, Runnable, OutputListener {
 			logger.log(Logger.typeError, this.getClass().toString(), "start()", "Unable to connect on " + host + ":" + port);
 		}
 	}
-
 	public void stop() {
 		try {
 			socket.close();
@@ -71,6 +67,7 @@ public class Client implements DataObserver, Runnable, OutputListener {
 	public void processData(Packet packet) {
 		switch(packet.getCommand()) {
 		case Packet.cmdMessage :
+			outputListener.consoleOutput((String)packet.getArguments());
 			break;
 		case Packet.cmdGetUserInput :
 			pushUserInput((String)packet.getArguments());
@@ -82,12 +79,11 @@ public class Client implements DataObserver, Runnable, OutputListener {
 	}
 
 	public void displayMessage(String msg) {
-		System.out.println(msg);
+		outputListener.consoleOutput(msg);
 	}
 
 	public void pushUserInput(String messageToUser) {
-		displayMessage(messageToUser);
-		String userInput = sc.nextLine();
+		String userInput = getUserInput(messageToUser);
 		Packet packet = new Packet.Builder().command(Packet.cmdPushInformation).arguments(userInput).build();
 		send(packet);
 	}
@@ -108,5 +104,9 @@ public class Client implements DataObserver, Runnable, OutputListener {
 	}
 	public OutputListener getOutputListener() {
 		return this;
+	}
+	
+	public String getUserInput(String message) {
+		return inputInterface.getUserInput(message);
 	}
 }

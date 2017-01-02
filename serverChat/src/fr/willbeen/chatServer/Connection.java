@@ -13,6 +13,7 @@ import fr.willbeen.chatProtocol.DataObserver;
 import fr.willbeen.chatProtocol.DataStreamListener;
 import fr.willbeen.chatProtocol.Packet;
 import fr.willbeen.chatUtils.Logger;
+import fr.willbeen.chatUtils.OutputListener;
 
 public class Connection implements Runnable, DataObserver {
 	public static final String newLine = System.getProperty("line.separator");
@@ -51,11 +52,12 @@ public class Connection implements Runnable, DataObserver {
 			try {
 				// when socket connection established, the client sends the login
 				packet = (Packet)ois.readObject();
-				login = extractUserInput(packet);
+				login = getUserInput(packet);
 				sendMessageToClient("Bienvenue " + login);
-				askClientUserInput("Entrer le password : ");
+				sendMessageToClient("tralala pouet pouet");
+				askClientUserInput("Entrer le password");
 				packet = (Packet)ois.readObject();
-				password = extractUserInput(packet);
+				password = getUserInput(packet);
 			} catch (ClassNotFoundException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -152,7 +154,7 @@ public class Connection implements Runnable, DataObserver {
 		return server.getLogger().getOutputListener();
 	}
 	
-	private String extractUserInput(Packet packet) {
+	private String getUserInput(Packet packet) {
 		String userInput = null;
 		if (packet.getCommand() == Packet.cmdPushInformation) {
 			userInput = (String)packet.getArguments();

@@ -1,14 +1,14 @@
-package fr.willbeen.graphic;
+package fr.willbeen.chatGUI;
 
 import javax.swing.JFrame;
 
-import fr.willbeen.chatServer.OutputListener;
+import fr.willbeen.chatUtils.OutputListener;
 
-public class ServerWindow extends JFrame {
+public class ServerGUI extends JFrame {
 
 	private ConsolePanel consolePanel;
 	
-	public ServerWindow() {
+	public ServerGUI() {
 		consolePanel = new ConsolePanel();
 		this.setTitle("Chat Server");
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

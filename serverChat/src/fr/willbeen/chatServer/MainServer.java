@@ -1,12 +1,10 @@
 package fr.willbeen.chatServer;
 
-import javax.swing.JFrame;
-
-import fr.willbeen.graphic.ServerWindow;
+import fr.willbeen.chatGUI.ServerGUI;
 
 public class MainServer {
 	public static void main(String[] args) {
-		ServerWindow serverWindow = new ServerWindow();
+		ServerGUI serverWindow = new ServerGUI();
 		Server server = new Server(2009, serverWindow.getOutputListener());
 		Thread t = new Thread(server);
 		t.start();

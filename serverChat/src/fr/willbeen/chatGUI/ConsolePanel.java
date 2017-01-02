@@ -1,12 +1,13 @@
-package fr.willbeen.graphic;
+package fr.willbeen.chatGUI;
 
 import java.awt.TextArea;
 
 import javax.swing.JPanel;
 
-import fr.willbeen.chatServer.OutputListener;
 import java.awt.BorderLayout;
 import javax.swing.JTextArea;
+
+import fr.willbeen.chatUtils.OutputListener;
 
 public class ConsolePanel extends JPanel implements OutputListener{
 	private JTextArea textArea;

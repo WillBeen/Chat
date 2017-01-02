@@ -6,12 +6,12 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Hashtable;
 
+import fr.willbeen.chatGUI.ServerGUI;
 import fr.willbeen.chatUtils.Logger;
-import fr.willbeen.graphic.ServerWindow;
+import fr.willbeen.chatUtils.OutputListener;
 
 public class Server implements Runnable {
 	private int port;
-	private OutputListener outputListener = null;
 	private ServerSocket ss = null;
 	private Logger logger = null;
 	
@@ -19,7 +19,6 @@ public class Server implements Runnable {
 	
 	public Server(int port, OutputListener ol) {
 		this.port = port;
-		outputListener = ol;
 		logger = new Logger(ol);
 	}
 	
