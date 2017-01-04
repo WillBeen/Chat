@@ -1,5 +1,5 @@
 package fr.willbeen.chatUtils;
 
-public interface InputInterface {
+public interface InputRequestListener {
 	public String getUserInput(String message);
 }

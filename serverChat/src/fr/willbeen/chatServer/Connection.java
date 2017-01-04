@@ -13,7 +13,7 @@ import fr.willbeen.chatProtocol.DataObserver;
 import fr.willbeen.chatProtocol.DataStreamListener;
 import fr.willbeen.chatProtocol.Packet;
 import fr.willbeen.chatUtils.Logger;
-import fr.willbeen.chatUtils.OutputListener;
+import fr.willbeen.chatUtils.TextIOListener;
 
 public class Connection implements Runnable, DataObserver {
 	public static final String newLine = System.getProperty("line.separator");
@@ -25,7 +25,6 @@ public class Connection implements Runnable, DataObserver {
 	private ObjectOutputStream oos = null;
 	private ObjectInputStream ois = null;
 	private DataStreamListener dataStreamListener = null;
-	private Scanner sc = null;
 	
 	private String login;
 
@@ -37,7 +36,6 @@ public class Connection implements Runnable, DataObserver {
 			oos = new ObjectOutputStream(socket.getOutputStream());
 			oos.flush();
 			ois = new ObjectInputStream(socket.getInputStream());
-			sc = new Scanner(System.in);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -54,7 +52,6 @@ public class Connection implements Runnable, DataObserver {
 				packet = (Packet)ois.readObject();
 				login = getUserInput(packet);
 				sendMessageToClient("Bienvenue " + login);
-				sendMessageToClient("tralala pouet pouet");
 				askClientUserInput("Entrer le password");
 				packet = (Packet)ois.readObject();
 				password = getUserInput(packet);
@@ -69,12 +66,9 @@ public class Connection implements Runnable, DataObserver {
 				logger.log("Connexion accepted for user : " + login);
 				sendMessageToClient("Connexion acceptee");
 				server.addConnection(login, this);
-				dataStreamListener = new DataStreamListener(socket, this);
+				dataStreamListener = new DataStreamListener(ois, this);
 				Thread t = new Thread(dataStreamListener);
 				t.start();
-				while (true) {
-					processServerUserInput(sc.nextLine());
-				}
 			} else {
 				logger.log("Wrong password for user : " + login);
 				sendMessageToClient("Login / password incorrect");
@@ -89,10 +83,6 @@ public class Connection implements Runnable, DataObserver {
 		try {
 			socket.close();
 		} catch (IOException e) {}
-	}
-	
-	private void processServerUserInput(String input) {
-		logger.log("Server user has typed something : " + input);
 	}
 	
 	public boolean isValidPassword(String password) {
@@ -113,7 +103,7 @@ public class Connection implements Runnable, DataObserver {
 		sendMessageToClient("");
 	}
 	public void sendMessageToClient(String message) {
-		Packet packet = new Packet.Builder().command(Packet.cmdMessage).from("server").to(login).arguments(message).build();
+		Packet packet = new Packet.Builder().command(Packet.cmdMessage).arguments(message).build();
 		send(packet);
 	}
 	
@@ -128,12 +118,12 @@ public class Connection implements Runnable, DataObserver {
 	
 	public void processInputFromClient(String inputString) {
 		switch (inputString) {
-		case "exit" : stop();
+		case "/exit" : stop();
 		break;
 		}
 	}
 	
-	private void send(Packet packet) {
+	public void send(Packet packet) {
 		try {
 			oos.writeObject(packet);
 			oos.flush();
@@ -144,13 +134,25 @@ public class Connection implements Runnable, DataObserver {
 	}
 
 	@Override
-	public void processData(Packet td) {
-		// TODO Auto-generated method stub
-		
+	public void processData(Packet packet) {
+		switch (packet.getCommand()) {
+		case Packet.cmdMessage :
+			if (packet.getTo() == null)
+				logger.log("<" + login + "> " + (String)packet.getArguments());
+			else
+				try {
+					Packet p = new Packet.Builder().command(Packet.cmdMessage).from(login).arguments((String)packet.getArguments()).build();
+					server.getConnection((String)packet.getTo()).send(p);
+				} catch (Exception e) {
+					Packet p = new Packet.Builder().command(Packet.cmdMessage).arguments(e.getMessage()).build();
+					send(p);
+				}
+			break;
+		}
 	}
 
 	@Override
-	public OutputListener getOutputListener() {
+	public TextIOListener getOutputListener() {
 		return server.getLogger().getOutputListener();
 	}
 	

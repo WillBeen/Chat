@@ -9,23 +9,22 @@ public class Logger {
 	public static final int typeWarning = 1;
 	public static final int typeInfo = 2;
 	
-	private OutputListener outputListener = null;
+	private TextIOListener outputListener = null;
 	
-	public Logger(OutputListener ol) {
+	public Logger(TextIOListener ol) {
 		outputListener = ol;
 	}
 	
-	public void log(int logType, String className, String method, String txt) {
+	public void log(int logType, String txt) {
 		DateFormat df = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 		String logDate = df.format(new Date());
 		String logMsg;
-		String logContent = className + "\tMethod : " + method + "\n\t" + txt;
 		switch (logType) {
 		case typeError :
-			logMsg = "ERROR : " + logContent;
+			logMsg = "ERROR : " + txt;
 			break;
 		case typeWarning :
-			logMsg = "WARNING : " + logContent;
+			logMsg = "WARNING : " + txt;
 			break;
 		case typeInfo :
 			logMsg = "INFO : " + txt;
@@ -35,14 +34,14 @@ public class Logger {
 		} 
 		logMsg = logDate + " : " + logMsg;
 //		System.out.println(logMsg);
-		outputListener.consoleOutput(logMsg);
+		outputListener.processIO(logMsg);
 	}
 	
 	public void log(String txt) {
-		log(typeInfo, "", "", txt);
+		log(typeInfo, txt);
 	}
 	
-	public OutputListener getOutputListener() {
+	public TextIOListener getOutputListener() {
 		return outputListener;
 	}
 }

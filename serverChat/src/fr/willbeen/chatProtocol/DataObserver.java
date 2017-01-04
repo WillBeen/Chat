@@ -1,8 +1,8 @@
 package fr.willbeen.chatProtocol;
 
-import fr.willbeen.chatUtils.OutputListener;
+import fr.willbeen.chatUtils.TextIOListener;
 
 public interface DataObserver {
 	public void processData(Packet packet);
-	public OutputListener getOutputListener();
+	public TextIOListener getOutputListener();
 }

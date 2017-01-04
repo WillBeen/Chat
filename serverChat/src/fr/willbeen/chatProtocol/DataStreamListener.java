@@ -4,33 +4,37 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.Socket;
 
-import fr.willbeen.chatUtils.Logger;
-
 public class DataStreamListener extends DataObservable implements Runnable {
 
-	private Logger logger = null;
-	private Socket socket = null;
 	private ObjectInputStream ois = null;
+
+	public DataStreamListener(ObjectInputStream ois, DataObserver dataObserver) {
+		super(dataObserver);
+		this.ois = ois;
+	}
 	
 	public DataStreamListener(Socket s, DataObserver dataObserver) {
 		super(dataObserver);
-		logger = new Logger(dataObserver.getOutputListener());
-		socket = s;
+		dataObserver.processData(new Packet.Builder().command(Packet.cmdMessage).arguments("pouet").build());;
+		try {
+			ois = new ObjectInputStream(s.getInputStream());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	@Override
 	public void run() {
 		try {
-			ois = new ObjectInputStream(socket.getInputStream());
 			Packet packet;
 			while (true) {
 				packet = (Packet)ois.readObject();
 				notifyObervers(packet);
 			}
 		} catch (IOException e) {
-			logger.log(Logger.typeError, getClass().toString(), "run()", "Unable to initialize the ObjectInputStream");
+			e.printStackTrace();
 		} catch (ClassNotFoundException e) {
-			logger.log(Logger.typeError, getClass().toString(), "run()", "The object received isnt from the expected class");
+			e.printStackTrace();
 		}
 	}
 

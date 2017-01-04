@@ -9,11 +9,11 @@ import java.util.Scanner;
 import fr.willbeen.chatProtocol.DataStreamListener;
 import fr.willbeen.chatProtocol.DataObserver;
 import fr.willbeen.chatProtocol.Packet;
-import fr.willbeen.chatUtils.InputInterface;
+import fr.willbeen.chatUtils.InputRequestListener;
 import fr.willbeen.chatUtils.Logger;
-import fr.willbeen.chatUtils.OutputListener;
+import fr.willbeen.chatUtils.TextIOListener;
 
-public class Client implements DataObserver, OutputListener {
+public class Client implements DataObserver {
 	private String host;
 	private int port;
 	
@@ -21,22 +21,29 @@ public class Client implements DataObserver, OutputListener {
 	private Socket socket = null;
 	private ObjectOutputStream oos;
 	private DataStreamListener dataStreamListener = null;
-	Thread dataStreamListenerThread = null;
+	private Thread dataStreamListenerThread = null;
 	
 	private String login = null;
 	
 	private Packet packet = null;
+
+	private TextIOListener outputListener = null;
+	private InputRequestListener inputOnRequestInterface = null;
 	
-	OutputListener outputListener = null;
-	InputInterface inputInterface = null;
+	private TextIOListener userInputListener = new TextIOListener() {
+		@Override
+		public void processIO(String io) {
+			processUserInput(io);
+		}
+	};
 	
-	public Client(String host, int port, OutputListener ol, InputInterface ii) {
+	public Client(String host, int port, TextIOListener ol, InputRequestListener ii) {
 		this.host = host;
 		this.port = port;
 		logger = new Logger(ol);
 		logger.log("Starting the client");
 		outputListener = ol;
-		inputInterface = ii;
+		inputOnRequestInterface = ii;
 	}
 
 	public void connectToServer(String login) {
@@ -54,7 +61,7 @@ public class Client implements DataObserver, OutputListener {
 			packet = new Packet.Builder().command(Packet.cmdPushInformation).arguments(login).build();
 			send(packet);
 		} catch (IOException e) {
-			logger.log(Logger.typeError, this.getClass().toString(), "start()", "Unable to connect on " + host + ":" + port);
+			logger.log(Logger.typeError, "Unable to connect on " + host + ":" + port);
 		}
 	}
 	public void stop() {
@@ -67,7 +74,10 @@ public class Client implements DataObserver, OutputListener {
 	public void processData(Packet packet) {
 		switch(packet.getCommand()) {
 		case Packet.cmdMessage :
-			outputListener.consoleOutput((String)packet.getArguments());
+			if (packet.getFrom() == null)
+				outputListener.processIO((String)packet.getArguments());
+			else
+				outputListener.processIO("<" + (String)packet.getFrom() + "> " + (String)packet.getArguments());
 			break;
 		case Packet.cmdGetUserInput :
 			pushUserInput((String)packet.getArguments());
@@ -79,7 +89,7 @@ public class Client implements DataObserver, OutputListener {
 	}
 
 	public void displayMessage(String msg) {
-		outputListener.consoleOutput(msg);
+		outputListener.processIO(msg);
 	}
 
 	public void pushUserInput(String messageToUser) {
@@ -97,16 +107,68 @@ public class Client implements DataObserver, OutputListener {
 			e.printStackTrace();
 		}
 	}
-
-	@Override
-	public void consoleOutput(String output) {
-		System.out.println(output);
-	}
-	public OutputListener getOutputListener() {
-		return this;
+	
+	public TextIOListener getOutputListener() {
+		return outputListener;
 	}
 	
 	public String getUserInput(String message) {
-		return inputInterface.getUserInput(message);
+		return inputOnRequestInterface.getUserInput(message);
+	}
+	
+	public TextIOListener getUserInputListener() {
+		return userInputListener;
+	}
+	
+	private void processUserInput(String userInput) {
+		switch (userInput.split(" ")[0]) {
+		case "/time" :
+			outputListener.processIO(" >> Il est l'heure qu'il est et c'est tout !");
+			break;
+		case "/disconnect" : 
+			try {socket.close();} catch (IOException e) {}
+			break;
+		case "/help" :
+			outputListener.processIO(help());
+			break;
+		case "/pv" :
+		case "/private" :
+			String[] userInputWords = userInput.split(" ");
+			// if the input has at least 3 fields (command, login and message)
+			if (userInputWords.length >= 3) {
+				String to = userInputWords[1];
+				// if the message is sent to itself
+				if (to == login) {
+					outputListener.processIO("ERROR : you can't send a message to yourself");
+				} else {
+					String message = userInputWords[2];
+					try {
+						for (int i = 3; i < userInputWords.length; i++) {
+							message += " " + userInputWords[i];
+						}
+					} catch (IndexOutOfBoundsException e) {
+					}
+					Packet packet = new Packet.Builder().command(Packet.cmdMessage).to(to).arguments(message).build();
+					send(packet);
+					outputListener.processIO(message);
+				}
+			} else {
+				outputListener.processIO("ERROR : you must specify a user and a message to send");
+			}
+			break;
+		default :
+			outputListener.processIO("<" + login + "> " + userInput);
+			Packet packet = new Packet.Builder().command(Packet.cmdMessage).arguments(userInput).build();
+			send(packet);
+		}
+	}
+	
+	private String help() {
+		String help =
+				"\n commands available :" +
+						"\n\t /help : display this help" +
+						"\n\t /pv or /private *login* : send a private message to login"
+						;
+		return help;
 	}
 }

@@ -3,6 +3,8 @@ package fr.willbeen.chatGUI;
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
@@ -23,7 +25,7 @@ public class GUI extends JFrame {
 	private JMenu mnPlop;
 	private JMenuItem mntmConnect;
 	
-	Client c;
+	Client client;
 	
 	ActionListener actionListener = new ActionListener() {
 		@Override
@@ -39,8 +41,9 @@ public class GUI extends JFrame {
 	public GUI() {
 		this.setTitle("Willbeen's chat");
 		this.setSize(800, 600);
+		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		
-		setClient();
+		setAsClient();
 		
 		getContentPane().setLayout(new BorderLayout());
 		this.getContentPane().add(menuBar, BorderLayout.NORTH);
@@ -50,14 +53,15 @@ public class GUI extends JFrame {
 		this.setVisible(true);
 	}
 	
-	public void setClient() {
+	public void setAsClient() {
 		menuBar = new GUIMenuBar(actionListener);
-		panel = new GUIClientPanel();
+		panel = new GUIClientPanel(actionListener);
 		statusBar = new GUIStatusBar();
 	}
 	public void connect() {
-		c = new Client(host, port, panel.getOutputListener(), panel.getInputInterface());
-		c.connectToServer(JOptionPane.showInputDialog("Enter your login"));
+		client = new Client(host, port, panel.getOutputListener(), panel.getInputInterface());
+		client.connectToServer(JOptionPane.showInputDialog("Enter your login"));
+		panel.setUserInputListener(client.getUserInputListener());
 	}
 	
 	public String getUserInput(String message) {

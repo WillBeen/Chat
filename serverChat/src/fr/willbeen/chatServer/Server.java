@@ -2,22 +2,21 @@ package fr.willbeen.chatServer;
 
 import java.io.IOException;
 import java.net.ServerSocket;
-import java.net.Socket;
-import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.Hashtable;
 
-import fr.willbeen.chatGUI.ServerGUI;
 import fr.willbeen.chatUtils.Logger;
-import fr.willbeen.chatUtils.OutputListener;
+import fr.willbeen.chatUtils.TextIOListener;
 
 public class Server implements Runnable {
 	private int port;
 	private ServerSocket ss = null;
 	private Logger logger = null;
 	
+	// list of connected clients : login / connection
 	private Hashtable<String, Connection> connectedUsers = new Hashtable<String, Connection>();
 	
-	public Server(int port, OutputListener ol) {
+	public Server(int port, TextIOListener ol) {
 		this.port = port;
 		logger = new Logger(ol);
 	}
@@ -56,6 +55,12 @@ public class Server implements Runnable {
 	public void removeConnection(String login) {
 		connectedUsers.remove(login);
 		logger.log(connectedUsers.size() + " client(s) are connected or trying to");
+	}
+	
+	public Connection getConnection(String login) throws Exception {
+		if (!connectedUsers.containsKey(login))
+			throw new Exception("Client logged as \"" + login + "\" is not connected");
+		return connectedUsers.get(login);
 	}
 	
 	public Logger getLogger() {

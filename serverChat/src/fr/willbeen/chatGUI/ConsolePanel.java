@@ -7,9 +7,9 @@ import javax.swing.JPanel;
 import java.awt.BorderLayout;
 import javax.swing.JTextArea;
 
-import fr.willbeen.chatUtils.OutputListener;
+import fr.willbeen.chatUtils.TextIOListener;
 
-public class ConsolePanel extends JPanel implements OutputListener{
+public class ConsolePanel extends JPanel implements TextIOListener{
 	private JTextArea textArea;
 	
 	public ConsolePanel() {
@@ -19,7 +19,7 @@ public class ConsolePanel extends JPanel implements OutputListener{
 		add(textArea, BorderLayout.CENTER);
 	}
 	@Override
-	public void consoleOutput(String output) {
+	public void processIO(String output) {
 		textArea.setText(textArea.getText() + "\n" + output);
 	}
 

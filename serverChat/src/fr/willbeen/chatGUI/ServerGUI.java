@@ -2,7 +2,7 @@ package fr.willbeen.chatGUI;
 
 import javax.swing.JFrame;
 
-import fr.willbeen.chatUtils.OutputListener;
+import fr.willbeen.chatUtils.TextIOListener;
 
 public class ServerGUI extends JFrame {
 
@@ -17,7 +17,7 @@ public class ServerGUI extends JFrame {
 		this.setVisible(true);
 	}
 	
-	public OutputListener getOutputListener() {
+	public TextIOListener getOutputListener() {
 		return consolePanel;
 	}
 }
